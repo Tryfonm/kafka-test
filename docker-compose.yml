@@ -1,0 +1,56 @@
+version: '3'
+
+networks:
+  kafka-network:
+    name: kafka-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
+
+services:
+
+  zookeeper-demo:
+    image: zookeeper-demo
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zookeeper-demo
+    networks:
+      kafka-network:
+        ipv4_address: 172.18.0.2
+    volumes:
+      - ./data-zookeeper:/app/data
+    command: ["sh", "-c", "bin/zookeeper-server-start.sh config/zookeeper.properties"]
+    ports:
+      - 2888:2888
+    restart: always
+
+  broker-demo:
+    image: broker-demo
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: broker-demo
+    networks:
+      kafka-network:
+        ipv4_address: 172.18.0.3
+    volumes:
+      - ./data-broker:/app/data
+    command: ["sh", "-c", "bin/kafka-server-start.sh config/server.properties"]
+    ports:
+      - 9092:9092
+    restart: always
+
+  topic-create:
+    image: topic-create
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: topic-create
+    networks:
+      kafka-network:
+        ipv4_address: 172.18.0.4
+    command: ["sh", "-c", "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 172.18.0.3:9092"]
+    restart: 'no'
